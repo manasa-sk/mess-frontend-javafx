@@ -162,8 +162,8 @@ public class LoginSignUpApp extends Application {
             defaultHeight = screenHeight;
         } else {
             // If window is not maximized, set default size to 300 width and 250 height
-            defaultWidth = 300;
-            defaultHeight = 250;
+            defaultWidth = 400;
+            defaultHeight = 350;
         }
     }
 }
