@@ -1,3 +1,6 @@
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -5,6 +8,7 @@ import javafx.geometry.HPos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
@@ -13,9 +17,8 @@ public class LoginSignUpApp extends Application {
     private Stage primaryStage;
     private TextField emailField;
     private PasswordField passwordField;
-    private CheckBox rememberMeCheckBox;
-    private double defaultWidth = 300;
-    private double defaultHeight = 250;
+    private double defaultWidth = 400;
+    private double defaultHeight = 350;
 
     public static void main(String[] args) {
         launch(args);
@@ -35,13 +38,34 @@ public class LoginSignUpApp extends Application {
         Label passwordLabel = new Label("Password:");
         passwordField = new PasswordField();
 
-        rememberMeCheckBox = new CheckBox("Remember Me");
-
+        Label errorLabel = new Label("Invalid email id or password");
+        errorLabel.setTextFill(Color.RED);
+        errorLabel.setVisible(false);
+        
         Button loginButton = new Button("Login");
         loginButton.setOnAction(event -> {
-        	// Assuming login is successful, switch to the student dashboard
-            StudentDashboard studentDashboard = new StudentDashboard();
-            primaryStage.setScene(studentDashboard.createScene());
+        	String email = emailField.getText();
+            String password = passwordField.getText();
+
+            Object[] loginSuccessful = JDBCUtils.authenticateLogin(email, password);
+
+            switch((Integer)loginSuccessful[0]) {
+        	case 1:
+        		StudentDashboard studentDashboard = new StudentDashboard((User)loginSuccessful[1]);
+                primaryStage.setScene(studentDashboard.createScene());
+                break;
+        	case 2:
+        		AdminDashboard adminDashboard = new AdminDashboard((User)loginSuccessful[1]);
+                primaryStage.setScene(adminDashboard.createScene());
+                break;
+        	case 3:
+        		ManagerDashboard managerDashboard = new ManagerDashboard((User)loginSuccessful[1]);
+                primaryStage.setScene(managerDashboard.createScene());
+                break;
+            default:
+            	errorLabel.setVisible(true);
+        	}
+            
         });
 
         Button signUpButton = new Button("Sign Up");
@@ -49,25 +73,6 @@ public class LoginSignUpApp extends Application {
             // Switch to the signup page
             showSignUpPage();
         });
-        
-     // Add Manager and Admin buttons
-        Button managerButton = new Button("Manager");
-        managerButton.setOnAction(event -> {
-        	// Assuming login is successful, switch to the manager dashboard
-            ManagerDashboard managerDashboard = new ManagerDashboard();
-            primaryStage.setScene(managerDashboard.createScene());
-        });
-
-        Button adminButton = new Button("Admin");
-        adminButton.setOnAction(event -> {
-        	// Assuming login is successful, switch to the student dashboard
-            AdminDashboard adminDashboard = new AdminDashboard();
-            primaryStage.setScene(adminDashboard.createScene());
-        });
-
-        HBox managerAdminBox = new HBox(managerButton, adminButton);
-        managerAdminBox.setAlignment(Pos.CENTER_RIGHT);
-        managerAdminBox.setSpacing(10);
 
         GridPane loginLayout = new GridPane();
         loginLayout.setPadding(new Insets(20));
@@ -82,10 +87,9 @@ public class LoginSignUpApp extends Application {
         loginLayout.add(emailField, 1, 1);
         loginLayout.add(passwordLabel, 0, 2);
         loginLayout.add(passwordField, 1, 2);
-        loginLayout.add(rememberMeCheckBox, 0, 3, 2, 1);
-        loginLayout.add(loginButton, 0, 4, 2, 1);
-        loginLayout.add(signUpButton, 0, 5, 2, 1);
-        loginLayout.add(managerAdminBox, 1, 6, 1, 1); // Add manager and admin buttons to the layout
+        loginLayout.add(loginButton, 0, 3, 2, 1);
+        loginLayout.add(signUpButton, 0, 4, 2, 1);
+        loginLayout.add(errorLabel, 1, 5, 2, 1);
 
 
         // Set window size
@@ -113,10 +117,100 @@ public class LoginSignUpApp extends Application {
 
         Label confirmPasswordLabel = new Label("Confirm Password:");
         PasswordField confirmPasswordField = new PasswordField();
+        
+        Label hostelLabel = new Label("Hostel:");
+        TextField hostelField = new TextField();
+        
+        Label messLabel = new Label("Mess:");
+        
+        ToggleGroup messGroup = new ToggleGroup();
+        RadioButton mess1RadioButton = new RadioButton("Mess 1");
+        mess1RadioButton.setToggleGroup(messGroup);
+        RadioButton mess2RadioButton = new RadioButton("Mess 2");
+        mess2RadioButton.setToggleGroup(messGroup);
 
+        // Role label
+        Label roleLabel = new Label("Role:");
+
+        // Radio buttons
+        ToggleGroup roleGroup = new ToggleGroup();
+        RadioButton studentRadioButton = new RadioButton("Student");
+        studentRadioButton.setToggleGroup(roleGroup);
+        RadioButton managerRadioButton = new RadioButton("Manager");
+        managerRadioButton.setToggleGroup(roleGroup);
+        RadioButton adminRadioButton = new RadioButton("Admin");
+        adminRadioButton.setToggleGroup(roleGroup);
+
+        Label errorLabel = new Label("User already exists");
+        errorLabel.setTextFill(Color.RED);
+        errorLabel.setVisible(false);
+        
         Button signUpButton = new Button("Sign Up");
         signUpButton.setOnAction(event -> {
             // Add signup logic here
+        	if(!isValidEmail(signUpEmailField.getText())) {
+        		errorLabel.setText("Invalid Email Format");
+        		errorLabel.setVisible(true);
+        	}
+        	else {
+        		// Proceed to dashboard
+        		if(roleGroup.getSelectedToggle()!=null) {
+        			String selectedRole = ((RadioButton) roleGroup.getSelectedToggle()).getText();
+        			String name = nameField.getText();
+        			String email = signUpEmailField.getText();
+        			String password = signUpPasswordField.getText();
+        			String hostel = hostelField.getText();
+        			String mess = "";
+        			if(messGroup.getSelectedToggle()!=null) {
+        				mess = ((RadioButton) messGroup.getSelectedToggle()).getText();
+        			}
+        			
+        			boolean accountCreated = false;        			
+        			
+        			switch(selectedRole) {
+        			case "Student":
+        				if(hostel.isEmpty() || mess.isEmpty() || name.isEmpty() || email.isEmpty() || 
+        						password.isEmpty()) {
+        					errorLabel.setText("Fill required information");
+        					errorLabel.setVisible(true);
+        				}
+        				else {
+        					accountCreated = JDBCUtils.createUser(name, email, password, mess, hostel, selectedRole);
+        				}
+                        break;
+        			case "Admin":
+        				if(name.isEmpty() || email.isEmpty() || password.isEmpty()) {
+        					errorLabel.setText("Fill required information");
+        					errorLabel.setVisible(true);
+        				}
+        				else {
+        					accountCreated = JDBCUtils.createUser(name, email, password, mess, hostel, selectedRole);
+        				}
+                        break;
+                	case "Manager":
+                		if(name.isEmpty() || email.isEmpty() || password.isEmpty() || mess.isEmpty()) {
+        					errorLabel.setText("Fill required information");
+        					errorLabel.setVisible(true);
+        				}
+        				else {
+        					accountCreated = JDBCUtils.createUser(name, email, password, mess, hostel, selectedRole);
+        				}
+                        break;
+                    default:
+                    	errorLabel.setVisible(true);
+        			}
+        			
+        			if(accountCreated) {
+        				errorLabel.setText(selectedRole + " account created!");
+        				errorLabel.setTextFill(Color.GREEN);
+    					errorLabel.setVisible(true);
+        			}
+        		}
+        		else {
+        			errorLabel.setText("Fill required information");
+					errorLabel.setVisible(true);
+        		}
+        	}
         });
 
         Button backToLoginButton = new Button("Back to Login");
@@ -142,8 +236,27 @@ public class LoginSignUpApp extends Application {
         signUpLayout.add(signUpPasswordField, 1, 3);
         signUpLayout.add(confirmPasswordLabel, 0, 4);
         signUpLayout.add(confirmPasswordField, 1, 4);
-        signUpLayout.add(signUpButton, 0, 5, 2, 1);
-        signUpLayout.add(backToLoginButton, 0, 6, 2, 1);
+        signUpLayout.add(hostelLabel, 0, 5);
+        signUpLayout.add(hostelField, 1, 5);
+        
+        // Add spacing between Confirm Password field and Role label
+        signUpLayout.add(new Region(), 0, 6); // Spacer
+        signUpLayout.add(roleLabel, 0, 7);    // Role label
+
+        // Add radio buttons horizontally with spacing
+        signUpLayout.add(studentRadioButton, 1, 8);
+        signUpLayout.add(adminRadioButton, 1, 9);
+        signUpLayout.add(managerRadioButton, 1, 10);
+        signUpLayout.add(messLabel, 0, 12);    // Role label
+
+        // Add radio buttons horizontally with spacing
+        signUpLayout.add(mess1RadioButton, 0, 13);
+        signUpLayout.add(mess2RadioButton, 1, 13);
+        signUpLayout.add(new Region(), 0, 14);
+
+        signUpLayout.add(signUpButton, 0, 15, 2, 1);
+        signUpLayout.add(errorLabel, 1, 15, 2, 1);
+        signUpLayout.add(backToLoginButton, 0, 16, 2, 1);
 
         // Set window size
         setWindowSize(primaryStage);
@@ -152,6 +265,19 @@ public class LoginSignUpApp extends Application {
         primaryStage.setScene(scene);
     }
 
+    public static boolean isValidEmail(String email) {
+        // Regular expression for valid email format
+        String regex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+
+        // Compile the regex pattern
+        Pattern pattern = Pattern.compile(regex);
+
+        // Create matcher object
+        Matcher matcher = pattern.matcher(email);
+
+        // Return true if email matches the pattern, otherwise false
+        return matcher.matches();
+    }
 
     private void setWindowSize(Stage stage) {
         if (stage.isMaximized()) {

@@ -1,11 +1,13 @@
 public class AdminFB {
 	private final String student;
-    private final String id;
+    private final int id;
+    private final int messId;
     private final String comment;
 
-    public AdminFB(String student, String id, String comment) {
+    public AdminFB(String student, int id, int messId, String comment) {
         this.student = student;
         this.id = id;
+        this.messId = messId;
         this.comment = comment;
     }
 
@@ -13,11 +15,15 @@ public class AdminFB {
         return student;
     }
 	
-	public String getId() {
+	public int getId() {
 		return id;
 	}
 
     public String getComment() {
         return comment;
+    }
+    
+    public String getMess() {
+    	return JDBCUtils.messName.get(messId);
     }
 }

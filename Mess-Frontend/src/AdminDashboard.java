@@ -8,7 +8,13 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 public class AdminDashboard {
-
+	
+	private User user;
+	
+	public AdminDashboard(User user) {
+		this.user = user;
+	}
+	
     @SuppressWarnings("unchecked")
 	public Scene createScene() {
     	// Create a VBox for the left column
@@ -62,53 +68,61 @@ public class AdminDashboard {
         dashboardHeading.setStyle("-fx-font-weight: bold;");
 
         // Add space below the mess information
-        VBox.setMargin(dashboardHeading, new Insets(0, 0, 20, 0));
+        VBox.setMargin(dashboardHeading, new Insets(0, 0, 10, 0));
+        
+        HBox infoBox = new HBox();
+    	infoBox.setSpacing(10);
+        
+        Label userLabel = new Label("Admin:");
+        Label userValueLabel = new Label(user.name);
+        userValueLabel.setStyle("-fx-font-weight: bold;");
+        
+        infoBox.getChildren().addAll(userLabel, userValueLabel);
+        
+        VBox.setMargin(infoBox, new Insets(0, 0, 10, 0));
 
         // Create TableView for the meal booking
-        TableView<AdminLeaveAppShort> adminLeaveTable = new TableView<>();
+        TableView<AdminLeave> adminLeaveTable = new TableView<>();
 
         // Create TableColumn for meal
-        TableColumn<AdminLeaveAppShort, String> studentColumn = new TableColumn<>("STUDENT");
+        TableColumn<AdminLeave, String> studentColumn = new TableColumn<>("STUDENT");
         studentColumn.setCellValueFactory(new PropertyValueFactory<>("student"));
-
-        // Create TableColumn for time
-        TableColumn<AdminLeaveAppShort, String> idColumn = new TableColumn<>("ID");
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         
      // Create TableColumn for time
-        TableColumn<AdminLeaveAppShort, String> datesColumn = new TableColumn<>("DATES");
+        TableColumn<AdminLeave, String> datesColumn = new TableColumn<>("DATES");
         datesColumn.setCellValueFactory(new PropertyValueFactory<>("dates"));
         
-        TableColumn<AdminLeaveAppShort, Button> approveColumn = new TableColumn<>("APPROVE");
+        TableColumn<AdminLeave, Button> approveColumn = new TableColumn<>("APPROVE");
         approveColumn.setCellValueFactory(new PropertyValueFactory<>("approveButton"));
 
         // Add columns to the table
-        adminLeaveTable.getColumns().addAll(studentColumn, idColumn, datesColumn, approveColumn);
+        adminLeaveTable.getColumns().addAll(studentColumn, datesColumn, approveColumn);
 
         // Add data to the table
         adminLeaveTable.getItems().addAll(
-                new AdminLeaveAppShort("Aman Dasgupta", "f20200023", "29th Mar - 3rd Apr", new Button("APPROVE")),
-                new AdminLeaveAppShort("Shreya Singhal", "f20220016", "29th Mar - 3rd Apr", new Button("APPROVE"))
+        		JDBCUtils.getAllLeaves(0)
         );
         
      // Create TableView for the meal booking
-        TableView<AdminFBShort> feedbackTable = new TableView<>();
+        TableView<AdminFB> feedbackTable = new TableView<>();
 
         // Create TableColumn for meal
-        TableColumn<AdminFBShort, String> student2Column = new TableColumn<>("STUDENT");
+        TableColumn<AdminFB, String> student2Column = new TableColumn<>("STUDENT");
         student2Column.setCellValueFactory(new PropertyValueFactory<>("student"));
+        
+        TableColumn<AdminFB, String> mess2Column = new TableColumn<>("MESS");
+        mess2Column.setCellValueFactory(new PropertyValueFactory<>("mess"));
 
         // Create TableColumn for time
-        TableColumn<AdminFBShort, String> commentColumn = new TableColumn<>("COMMENT");
+        TableColumn<AdminFB, String> commentColumn = new TableColumn<>("COMMENT");
         commentColumn.setCellValueFactory(new PropertyValueFactory<>("comment"));
 
         // Add columns to the table
-        feedbackTable.getColumns().addAll(student2Column, commentColumn);
+        feedbackTable.getColumns().addAll(student2Column, mess2Column, commentColumn);
 
         // Add data to the table
         feedbackTable.getItems().addAll(
-                new AdminFBShort("Aman Dasgupta", "Mess 1 dinner"),
-                new AdminFBShort("Shreya Singhal", "Mess 2 lunch")
+        		JDBCUtils.getFeedback(0)
         );
 
         // Set up table pane
@@ -124,7 +138,7 @@ public class AdminDashboard {
         
         dashboardButton.setOnAction(event -> {
             rightContent.getChildren().clear();
-            rightContent.getChildren().addAll(dashboardHeading, splitPane);
+            rightContent.getChildren().addAll(dashboardHeading, infoBox, splitPane);
         });
         
      // Create VBox to hold the form elements
@@ -144,8 +158,11 @@ public class AdminDashboard {
         student3Column.setCellValueFactory(new PropertyValueFactory<>("student"));
         
      // Create TableColumn for time
-        TableColumn<AdminLeave, String> id2Column = new TableColumn<>("ID");
+        TableColumn<AdminLeave, Integer> id2Column = new TableColumn<>("ID");
         id2Column.setCellValueFactory(new PropertyValueFactory<>("id"));
+        
+        TableColumn<AdminLeave, String> messColumn = new TableColumn<>("MESS");
+        messColumn.setCellValueFactory(new PropertyValueFactory<>("mess"));
         
      // Create TableColumn for time
         TableColumn<AdminLeave, String> dates2Column = new TableColumn<>("DATES");
@@ -161,12 +178,12 @@ public class AdminDashboard {
 
         
         // Add columns to the table
-        leaveTable.getColumns().addAll(student3Column, id2Column, dates2Column, comment2Column, approve2Column);
+        leaveTable.getColumns().addAll(student3Column, id2Column, messColumn, dates2Column, comment2Column, 
+        		approve2Column);
 
         // Add data to the table
         leaveTable.getItems().addAll(
-                new AdminLeave("Aman Dasgupta", "f20200023", "29th Mar - 3rd Apr", "Comment 1", new Button("APPROVE")),
-                new AdminLeave("Shreya Singhal", "f20220016", "4th Apr - 13th Apr", "Comment 2", new Button("APPROVE"))
+                JDBCUtils.getAllLeaves(1)
         );
 
         // Add form elements to the formBox
@@ -196,20 +213,22 @@ public class AdminDashboard {
         TableColumn<AdminFB, String> student4Column = new TableColumn<>("STUDENT");
         student4Column.setCellValueFactory(new PropertyValueFactory<>("student"));
 
-        TableColumn<AdminFB, String> id4Column = new TableColumn<>("ID");
+        TableColumn<AdminFB, Integer> id4Column = new TableColumn<>("ID");
         id4Column.setCellValueFactory(new PropertyValueFactory<>("id"));
+        
+        TableColumn<AdminFB, Integer> mess3Column = new TableColumn<>("MESS");
+        mess3Column.setCellValueFactory(new PropertyValueFactory<>("mess"));
         
         // Create TableColumn for time
         TableColumn<AdminFB, String> comment3Column = new TableColumn<>("COMMENT");
         comment3Column.setCellValueFactory(new PropertyValueFactory<>("comment"));
 
         // Add columns to the table
-        feedback2Table.getColumns().addAll(student4Column, id4Column, comment3Column);
+        feedback2Table.getColumns().addAll(student4Column, id4Column, mess3Column, comment3Column);
 
         // Add data to the table
         feedback2Table.getItems().addAll(
-                new AdminFB("Aman Dasgupta", "f20200023", "Mess 1 dinner"),
-                new AdminFB("Shreya Singhal", "f20220016", "Mess 2 lunch")
+                JDBCUtils.getFeedback(1)
         );
 
         // Add nodes to feedback form

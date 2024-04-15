@@ -1,27 +1,32 @@
 import javafx.scene.control.Button;
 
 public class AdminLeave {
-    private final String student;
-    private final String id;
+	private final int lid;
+	private final String student;
+    private final int sid;
+    private final int messId;
     private final String dates;
     private final String comment;
-    private final Button approveButton;
 
-    public AdminLeave(String student, String id, String dates, String comment,
-    		Button button) {
-        this.student = student;
-        this.id = id;
+    public AdminLeave(int lid, String student, int sid, int messId, String dates, String comment) {
+    	this.lid = lid;
+    	this.student = student;
+        this.sid = sid;
+        this.messId = messId;
         this.dates = dates;
         this.comment = comment;
-        this.approveButton = button;
     }
 
 	public String getStudent() {
         return student;
     }
 
-    public String getId() {
-        return id;
+    public int getId() {
+        return sid;
+    }
+    
+    public String getMess() {
+    	return JDBCUtils.messName.get(messId);
     }
     
     public String getDates() {
@@ -33,6 +38,13 @@ public class AdminLeave {
     }
 
     public Button getApproveButton() {
-        return approveButton;
+    	Button button = new Button("APPROVE");
+    	button.setOnAction(event -> {
+    		if(JDBCUtils.approveLeave(lid)) {
+    			button.setText("APPROVED");
+    			button.setDisable(true);
+    		}
+    	});
+    	return button;
     }
 }

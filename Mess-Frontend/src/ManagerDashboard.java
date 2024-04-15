@@ -1,13 +1,22 @@
+import java.util.List;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 public class ManagerDashboard {
+	
+	private User user;
+	
+	public ManagerDashboard(User user) {
+		this.user = user;
+	}
 
     @SuppressWarnings("unchecked")
 	public Scene createScene() {
@@ -70,13 +79,19 @@ public class ManagerDashboard {
         managerInfoBox.setSpacing(10);
         
         Label messLabel = new Label("Mess:");
-        Label messValueLabel = new Label("MESS 1");
+        Label messValueLabel = new Label(JDBCUtils.messName.get(user.messId));
         messValueLabel.setStyle("-fx-font-weight: bold;");
         
         managerInfoBox.getChildren().addAll(messLabel, messValueLabel);
         
+        Label userLabel = new Label("Manager:");
+        Label userValueLabel = new Label(user.name);
+        userValueLabel.setStyle("-fx-font-weight: bold;");
+        
+        managerInfoBox.getChildren().addAll(userLabel, userValueLabel);
+        
         Label leftoverLabel = new Label("Today's Leftover:");
-        Label leftoverValueLabel = new Label("15 PLATES");
+        Label leftoverValueLabel = new Label(Integer.toString(JDBCUtils.getTotalLeftover())+" PLATES");
         leftoverValueLabel.setStyle("-fx-font-weight: bold;");
         
         managerInfoBox.getChildren().addAll(leftoverLabel, leftoverValueLabel);
@@ -90,50 +105,52 @@ public class ManagerDashboard {
         TableView<ManagerFPReq> FPReqTable = new TableView<>();
 
         // Create TableColumn for meal
-        TableColumn<ManagerFPReq, String> idColumn = new TableColumn<>("STUDENT ID");
+        TableColumn<ManagerFPReq, String> nameColumn = new TableColumn<>("NAME");
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        
+        TableColumn<ManagerFPReq, Integer> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
 
         // Create TableColumn for time
         TableColumn<ManagerFPReq, String> mealColumn = new TableColumn<>("MEAL");
-        mealColumn.setCellValueFactory(new PropertyValueFactory<>("meal"));
+        mealColumn.setCellValueFactory(new PropertyValueFactory<>("item"));
 
         // Create TableColumn for opt
-        TableColumn<ManagerFPReq, String> statusColumn = new TableColumn<>("STATUS");
+        TableColumn<ManagerFPReq, ManagerFPReq.ReqStatus> statusColumn = new TableColumn<>("STATUS");
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
         // Add columns to the table
-        FPReqTable.getColumns().addAll(idColumn, mealColumn, statusColumn);
+        FPReqTable.getColumns().addAll(nameColumn, idColumn, mealColumn, statusColumn);        
 
         // Add data to the table
         FPReqTable.getItems().addAll(
-                new ManagerFPReq("f20202001", "Breakfast", "Pending"),
-                new ManagerFPReq("f20018880", "Lunch", "Done"),
-                new ManagerFPReq("f20029881", "Dinner", "Done")
+                JDBCUtils.getFoodRequests(user.messId, 1)
         );
         
      // Create TableView for the meal booking
-        TableView<ManagerAOReq> addOnTable = new TableView<>();
+        TableView<ManagerFPReq> addOnTable = new TableView<>();
 
      // Create TableColumn for meal
-        TableColumn<ManagerAOReq, String> id2Column = new TableColumn<>("STUDENT ID");
+        TableColumn<ManagerFPReq, String> name2Column = new TableColumn<>("NAME");
+        name2Column.setCellValueFactory(new PropertyValueFactory<>("name"));
+        
+        TableColumn<ManagerFPReq, Integer> id2Column = new TableColumn<>("ID");
         id2Column.setCellValueFactory(new PropertyValueFactory<>("id"));
 
         // Create TableColumn for time
-        TableColumn<ManagerAOReq, String> itemColumn = new TableColumn<>("ITEM");
+        TableColumn<ManagerFPReq, String> itemColumn = new TableColumn<>("ITEM");
         itemColumn.setCellValueFactory(new PropertyValueFactory<>("item"));
 
         // Create TableColumn for opt
-        TableColumn<ManagerAOReq, String> status2Column = new TableColumn<>("STATUS");
+        TableColumn<ManagerFPReq, ManagerFPReq.ReqStatus> status2Column = new TableColumn<>("STATUS");
         status2Column.setCellValueFactory(new PropertyValueFactory<>("status"));
 
         // Add columns to the table
-        addOnTable.getColumns().addAll(id2Column, itemColumn, status2Column);
+        addOnTable.getColumns().addAll(name2Column, id2Column, itemColumn, status2Column);
 
         // Add data to the table
         addOnTable.getItems().addAll(
-                new ManagerAOReq("f20202001", "Dal Makhani", "Pending"),
-                new ManagerAOReq("f20018880", "Steamed Rice", "Done"),
-                new ManagerAOReq("f20029881", "Kadhai Paneer", "Done")
+        		JDBCUtils.getFoodRequests(user.messId, 2)
         );
 
         // Set up table pane
@@ -162,37 +179,36 @@ public class ManagerDashboard {
         headingLabel.setStyle("-fx-font-weight: bold;");
 
      // Create TableView for the meal booking
-        TableView<ManagerReq> requestTable = new TableView<>();
+        TableView<ManagerFPReq> requestTable = new TableView<>();
 
         // Create TableColumn for meal
-        TableColumn<ManagerReq, String> student3Column = new TableColumn<>("STUDENT");
-        student3Column.setCellValueFactory(new PropertyValueFactory<>("student"));
+        TableColumn<ManagerFPReq, String> student3Column = new TableColumn<>("NAME");
+        student3Column.setCellValueFactory(new PropertyValueFactory<>("name"));
         
      // Create TableColumn for time
-        TableColumn<ManagerReq, String> id3Column = new TableColumn<>("ID");
+        TableColumn<ManagerFPReq, String> id3Column = new TableColumn<>("ID");
         id3Column.setCellValueFactory(new PropertyValueFactory<>("id"));
         
      // Create TableColumn for time
-        TableColumn<ManagerReq, String> typeColumn = new TableColumn<>("TYPE");
+        TableColumn<ManagerFPReq, String> typeColumn = new TableColumn<>("TYPE");
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         
         
         // Create TableColumn for time
-        TableColumn<ManagerReq, String> item2Column = new TableColumn<>("ITEM");
+        TableColumn<ManagerFPReq, String> item2Column = new TableColumn<>("ITEM");
         item2Column.setCellValueFactory(new PropertyValueFactory<>("item"));
 
-        TableColumn<ManagerReq, Button> status3Column = new TableColumn<>("STATUS");
+        TableColumn<ManagerFPReq, Button> status3Column = new TableColumn<>("STATUS");
         status3Column.setCellValueFactory(new PropertyValueFactory<>("statusButton"));
 
         
         // Add columns to the table
         requestTable.getColumns().addAll(student3Column, id3Column, typeColumn, item2Column, status3Column);
 
+        List<ManagerFPReq> allReqs = JDBCUtils.getFoodRequests(user.messId, 1);
+        allReqs.addAll(JDBCUtils.getFoodRequests(user.messId, 2));
         // Add data to the table
-        requestTable.getItems().addAll(
-                new ManagerReq("Aman Dasgupta", "f20200023", "Food Package", "Lunch", new Button("PENDING")),
-                new ManagerReq("Shreya Singhal", "f20220016", "Add On", "Dal Makhani", new Button("DONE"))
-        );
+        requestTable.getItems().addAll(allReqs);
 
         // Add form elements to the formBox
         requestList.getChildren().addAll(headingLabel, requestTable);
@@ -226,11 +242,11 @@ public class ManagerDashboard {
         
         ToggleGroup toggleGroup = new ToggleGroup();
         
-        RadioButton breakfastRadio = new RadioButton("Breakfast");
+        RadioButton breakfastRadio = new RadioButton("BREAKFAST");
         breakfastRadio.setToggleGroup(toggleGroup);
-        RadioButton lunchRadio = new RadioButton("Lunch");
+        RadioButton lunchRadio = new RadioButton("LUNCH");
         lunchRadio.setToggleGroup(toggleGroup);
-        RadioButton dinnerRadio = new RadioButton("Dinner");
+        RadioButton dinnerRadio = new RadioButton("DINNER");
         dinnerRadio.setToggleGroup(toggleGroup);
         
         Label mealsLabel = new Label("Leftover Meals");
@@ -250,14 +266,29 @@ public class ManagerDashboard {
         VBox button = new VBox();
         button.setAlignment(Pos.CENTER);
         
+        Label error3Label = new Label("Error: Leftovers not updated");
+        error3Label.setTextFill(Color.RED);
+        error3Label.setVisible(false);
+        
      // Submit button
         Button submitButton = new Button("UPDATE");
+        submitButton.setOnAction(event -> {
+        	if(toggleGroup.getSelectedToggle()!=null) {
+        		String time = ((RadioButton) toggleGroup.getSelectedToggle()).getText();
+        		if(JDBCUtils.createLeftovers(time, Integer.parseInt(numericalMeals.getText()), user.messId)) {
+            		error3Label.setText(time+" Leftovers Updated");
+            		error3Label.setTextFill(Color.GREEN);
+            	}
+        		error3Label.setVisible(true);
+        	}
+        	
+        });
         
         button.getChildren().add(submitButton);
         
         
      // Add form elements to the formBox
-        leftoverForm.getChildren().addAll(heading, radioLabel, breakfastRadio, lunchRadio, dinnerRadio, mealsLabel, numericalMeals, button);
+        leftoverForm.getChildren().addAll(heading, radioLabel, breakfastRadio, lunchRadio, dinnerRadio, mealsLabel, numericalMeals, error3Label, button);
 
         // Set padding for the formBox
         leftoverForm.setPadding(new Insets(20));
